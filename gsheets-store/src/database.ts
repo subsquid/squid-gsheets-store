@@ -1,6 +1,7 @@
 import assert from 'assert'
 import {GlobalOptions, sheets, sheets_v4} from '@googleapis/sheets'
 import {Table, TableWriter} from './table'
+import {createHash} from 'crypto'
 
 type TableMap = Record<string, Table<any>>
 
@@ -67,7 +68,6 @@ export class Database<T extends TableMap> {
                             addSheet: {
                                 properties: {
                                     title: 'squid_status',
-                                    hidden: true,
                                     gridProperties: {rowCount: 1, columnCount: 1},
                                 },
                             },
@@ -99,37 +99,40 @@ export class Database<T extends TableMap> {
                 spreadsheetId: this.spreadsheetId,
                 requestBody: {
                     requests: newTables
-                        .map((t) => [
-                            {
-                                addSheet: {
-                                    properties: {
-                                        sheetId: Buffer.from(t.name).readInt32LE(),
-                                        title: t.name,
-                                        gridProperties: {rowCount: 1, columnCount: t.columns.length},
-                                    },
-                                },
-                            },
-                            {
-                                updateCells: {
-                                    range: {
-                                        sheetId: Buffer.from(t.name).readInt32LE(),
-                                        startColumnIndex: 0,
-                                        endColumnIndex: t.columns.length,
-                                        startRowIndex: 0,
-                                        endRowIndex: 1,
-                                    },
-                                    rows: [
-                                        {
-                                            values: t.columns.map((c) => ({
-                                                userEnteredValue: {stringValue: c.name},
-                                                userEnteredFormat: {numberFormat: {type: c.data.type.formatType}},
-                                            })),
+                        .map((t) => {
+                            let sheetId = createHash('md5').update(t.name).digest().readUint16LE()
+                            return [
+                                {
+                                    addSheet: {
+                                        properties: {
+                                            sheetId,
+                                            title: t.name,
+                                            gridProperties: {rowCount: 1, columnCount: t.columns.length},
                                         },
-                                    ],
-                                    fields: 'userEnteredValue(stringValue),userEnteredFormat(numberFormat)',
+                                    },
                                 },
-                            },
-                        ])
+                                {
+                                    updateCells: {
+                                        range: {
+                                            sheetId,
+                                            startColumnIndex: 0,
+                                            endColumnIndex: t.columns.length,
+                                            startRowIndex: 0,
+                                            endRowIndex: 1,
+                                        },
+                                        rows: [
+                                            {
+                                                values: t.columns.map((c) => ({
+                                                    userEnteredValue: {stringValue: c.name},
+                                                    userEnteredFormat: {numberFormat: {type: c.data.type.formatType}},
+                                                })),
+                                            },
+                                        ],
+                                        fields: 'userEnteredValue(stringValue),userEnteredFormat(numberFormat)',
+                                    },
+                                },
+                            ]
+                        })
                         .flat(),
                 },
             })
@@ -204,7 +207,7 @@ export class Database<T extends TableMap> {
         let {data} = await this.sheetsClient.spreadsheets.values.append({
             spreadsheetId: '1g6aHhV7-EsB6SRmM9KIQq9y_Mm4ZVfMw_5aK79NvDXg',
             range: `'${sheet}'`,
-            valueInputOption: 'USER_ENTERED',
+            valueInputOption: 'RAW',
             requestBody: {
                 values: [['']],
             },

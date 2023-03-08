@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@subsquid/gsheets-store",
+      "comment": "use md5 hash to create sheet id",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@subsquid/gsheets-store"
+}
