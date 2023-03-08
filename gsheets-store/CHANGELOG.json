@@ -1,0 +1,17 @@
+{
+  "name": "@subsquid/gsheets-store",
+  "entries": [
+    {
+      "version": "0.0.1",
+      "tag": "@subsquid/gsheets-store_v0.0.1",
+      "date": "Wed, 08 Mar 2023 20:02:37 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "use md5 hash to create sheet id"
+          }
+        ]
+      }
+    }
+  ]
+}
